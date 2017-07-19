@@ -1,0 +1,46 @@
+---
+title: "Tylers.Activity.MarkDown"
+output: html_document
+---
+
+## Step 1. Load the data and perform necessary transforms
+```{r load.transform}
+setwd("/Users/tylersummers/Desktop/Coursera/R") ##set wd
+act<-read.csv("activity.csv", header=TRUE) ##assume in working         directory
+act$date<-as.Date(act$date,"%Y-%m-%d") ##transform to class = date
+```
+
+## Step 2. Create a histogram of the total steps per day  
+
+```{r day.hist}
+x1<-tapply(act$steps, act$date, sum, na.rm=TRUE)
+    ##create array of total steps/day
+
+hist(x1, main="Total Steps by Day from October - November 2012", xlab="Daily Total Steps") 
+    ##plot histogram
+
+rug(x1) ##show density within histogram
+
+m<-ceiling(mean(x1)) ##calculate the mean, rounded
+
+m2<-median(x1) ## calculate the median, rounded
+```
+The mean steps in a day is `r m` and the median is `r m2` steps per day.  
+  
+##Step 3. Daily Step Pattern  
+```{r step.pattern}
+library(ggplot2)
+
+y1<-tapply(act$steps, act$interval, mean, na.rm=TRUE)
+    ##average steps by intervals across all days
+
+plot(names(y1),y1, type="n", main="Average Interval Steps", 
+     xlab= "Intervals", ylab="Average Steps")
+    ##set up plot for timeseries 
+lines(names(y1),y1) ##add the data
+
+y2<-sort(y1, decreasing=FALSE) ##order interval average steps
+
+y3<-names(y2[length(y2)]) ##interval of max avg steps
+````
+On average, the most steps occur at the `r y3` interval.
