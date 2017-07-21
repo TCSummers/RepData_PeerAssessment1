@@ -1,25 +1,106 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Tylers.Activity.MarkDown"
+output: html_document
 ---
 
+## Load and transform the data
+```{r load.transform}
+setwd("/Users/tylersummers/Desktop/Coursera/R") ##set wd
+act<-read.csv("activity.csv", header=TRUE) ##assume in working         directory
+act$date<-as.Date(act$date,"%Y-%m-%d") ##transform to class = date
+```
 
-## Loading and preprocessing the data
+## Histogram of the total steps per day  
 
+```{r day.hist}
+x1<-tapply(act$steps, act$date, sum, na.rm=TRUE)
+    ##create array of total steps/day
 
+hist(x1, main="Total Steps by Day from October - November 2012", xlab="Daily Total Steps") 
+    ##plot histogram
 
-## What is mean total number of steps taken per day?
+rug(x1) ##show density within histogram
 
+m<-ceiling(mean(x1)) ##calculate the mean, rounded
 
+m2<-median(x1) ## calculate the median, rounded
+```
+The mean steps in a day is `r m` and the median is `r m2` steps per day.  
+  
+##Average daily step pattern  
+```{r step.pattern}
+library(ggplot2)
 
-## What is the average daily activity pattern?
+y1<-tapply(act$steps, act$interval, mean, na.rm=TRUE)
+    ##average steps by intervals across all days
 
+plot(names(y1),y1, type="n", main="Average Interval Steps", 
+     xlab= "Intervals", ylab="Average Steps")
+    ##set up plot for timeseries 
+lines(names(y1),y1) ##add the data
 
+y2<-sort(y1, decreasing=FALSE) ##order interval average steps
 
-## Imputing missing values
+y3<-names(y2[length(y2)]) ##interval of max avg steps
+````
+On average, the most steps occur at the `r y3` interval.  
+  
+## Missing values imputed  
 
+````{r missing1}
+miss<-c(mean(is.na(act$steps)),mean(is.na(act$date)),
+        mean(is.na(act$interval))) ##calculate missing in %
 
+z1<-rbind(names(act),miss) ##show results in a df
+````
+Our data has missing values. See the table of missing values as percentages below.  
+`r z1`  
+  
+##Imputed Data
+```` {r missing2}
+library(plyr)
+impute<-function(x) replace(x, is.na(x), mean(x, na.rm = TRUE))
+    ##function to replace NAs with mean where mean ignores NAs
+act2<-ddply(act, ~interval, transform, steps=impute(steps))
+    ##use impute func across intervals and replace in df
+a1<-tapply(act2$steps, act2$date, sum, na.rm=TRUE)
+    ##create new array of total steps/day
 
-## Are there differences in activity patterns between weekdays and weekends?
+hist(x1, main="Total Steps by Day from October - November 2012 (Imputed)", xlab="Daily Total Steps") 
+    ##plot histogram
+
+a2<-ceiling(mean(a1)) ##compute new mean, rounded
+a3<-ceiling(median(a1)) ##compute new median, rounded
+````
+The mean steps in a day is `r a2` and the median is `r a3` steps per day (imputed).  
+
+## Weekdays verses Weekends  
+````{r days}
+wkdys<-c("Monday","Tuesday","Wednesday","Thursday","Friday")
+    ##vector of weekday names
+act2$week<-factor((weekdays(act$date) %in% wkdys), 
+                  levels= c(FALSE, TRUE), 
+                  labels= c("weekend","weekday"))
+    ##create column denoting day type
+
+par(mfrow=c(1,2)) ##set view for side by side plots
+
+##plot 1 for weekdays
+act3<-subset(act2, act2$week == "weekday") ##weekday subset
+
+w1<-tapply(act3$steps, act3$interval, mean, na.rm=TRUE)
+    ##average steps by intervals across all weekdays
+plot(names(w1),w1, type="n", main=" Weekday Average Steps", 
+     xlab= "Intervals", ylab="Average Steps")
+    ##set up plot for timeseries 
+lines(names(w1),w1) ##add the data
+
+act4<-subset(act2, act2$week == "weekend") ##weekend subset
+
+w2<-tapply(act4$steps, act4$interval, mean, na.rm=TRUE)
+    ##average steps by intervals across weekends
+plot(names(w2),w2, type="n", main="Weekend Average Steps", 
+     xlab= "Intervals", ylab="Average Steps")
+    ##set up plot for timeseries 
+lines(names(w2),w2) ##add the data
+````
